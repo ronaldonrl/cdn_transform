@@ -1,14 +1,15 @@
 ﻿using CandidateTesting.RonaldoRodriguesLopes.Application.Models;
 using Microsoft.Extensions.Logging;
-using System.IO;
 
 namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
 {
     public class LogFileService : ILogFileService
     {
         private readonly ILogger<LogFileService> _logger;
-        private const string FileNameMinhaCdn = "minhacdn.txt";
-        private string PathToFile { get; set; } = string.Empty;
+        private string PathToFile
+        {
+            get => Path.Combine(AppContext.BaseDirectory, "minhacdn.txt");
+        }
 
         public LogFileService(ILogger<LogFileService> logger)
         {
@@ -30,7 +31,7 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
                 if (string.IsNullOrEmpty(fileContent))
                     throw new ArgumentNullException("File not content.");
 
-                File.WriteAllText(FileNameMinhaCdn, fileContent);
+                File.WriteAllText(PathToFile, fileContent);
 
                 _logger.LogInformation("Download file success...");
                 
@@ -56,9 +57,6 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
 
         public async Task<string> ReadLogFileToProcess()
         {
-
-            PathToFile = Directory.GetCurrentDirectory() + "\\" + FileNameMinhaCdn;
-
             try
             {
                 if(!File.Exists(PathToFile))
@@ -83,7 +81,7 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
             }
         }
 
-        public async Task<bool> ProcessLogFile(string logFile, string pathFileOut)
+        public bool ProcessLogFile(string logFile, string pathFileOut)
         {
             _logger.LogInformation("Process started...");
 
@@ -100,6 +98,8 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
             //Transform log file MinhaCDN to log Agora
             IEnumerable<string> arrayStringLogAgora = arrayLogAgora.Select(agoraLog => (string)agoraLog);
 
+            DeleteDiretoryPathOut(pathFileOut);
+
             return CreateLogFileAgora(arrayStringLogAgora, pathFileOut);
         }
 
@@ -108,7 +108,7 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
             try
             {
                 if (string.IsNullOrEmpty(file))
-                    throw new Exception("No Log found.");
+                    throw new Exception("No Log find.");
 
                 if (file.Length < 10)
                     throw new Exception("Log length too short.");
@@ -144,11 +144,11 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
 
                 if (string.IsNullOrEmpty(pathFileOut))
                     throw new IOException("Path file out null.");
-
+                
                 CreateDirectoryPath(pathFileOut);
                 File.WriteAllLines(pathFileOut, newLogAgora);
 
-                _logger.LogInformation("File log Agora created success.");
+                _logger.LogInformation($"File log Agora created success in directory: {pathFileOut}");
 
                 return true;
 
@@ -164,18 +164,30 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Application.Services
         {
             try
             {
-                string directory = Path.GetDirectoryName(pathFileOut);
+                string directory = Path.GetDirectoryName(pathFileOut)!;
 
                 if (!Directory.Exists(directory))
-                    Directory.CreateDirectory(directory);
-            }
-            catch (DirectoryNotFoundException ex)
-            {
-                _logger.LogError($"Erro - [VerifyDirectoryPath][DirectoryNotFoundException]: {ex.Message}");
+                    Directory.CreateDirectory(directory ?? "./output");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Erro - [VerifyDirectoryPath][Exception]: {ex.Message}");
+                _logger.LogError($"Erro - [CreateDirectoryPath][Exception]: {ex.Message}");
+            }
+        }
+
+        private void DeleteDiretoryPathOut(string pathFileOut)
+        {
+            try
+            {
+                string directory = Path.GetDirectoryName(pathFileOut)!;
+
+                if (Directory.Exists(directory))
+                    Directory.Delete(directory, true);
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Erro - [DeleteDiretoryPathOut][Exception]: {ex.Message}");
             }
         }
     }

@@ -9,32 +9,21 @@ class Program
     static async Task Main(string[] args)
     {
 
-        //Configuration Builder Appsettings
-        var configuration = new ConfigurationBuilder();
-        configuration.SetBasePath(AppContext.BaseDirectory)
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-            .AddEnvironmentVariables();
+        ConfigurationBuilder();
 
-        //Configuration Logger
-        Log.Logger = new LoggerConfiguration()
-            .ReadFrom.Configuration(configuration.Build())
-            .Enrich.FromLogContext()
-            .WriteTo.Console()
-            .CreateLogger();
-
-        //Configurarion DI
-        using IHost host = Host.CreateDefaultBuilder(args)
-            .ConfigureServices((opt, services) =>
-            {
-                services.AddTransient<ILogFileService, LogFileService>();
-            })
+        IHost host = CreateHostBuilder(args)
             .UseSerilog()
-            .Build();       
+            .Build();
 
         try
         {
-            var pathFile = args[0];
-            var pathFileOut = args[1];
+            //sourceUrl
+            //var pathFile = args[0];
+            var pathFile = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
+
+            //targetPath
+            //var pathFileOut = args[1];
+            var pathFileOut = "./output/agora.txt";
 
             //Call Service to Download file
             ILogFileService _logService = host.Services.GetRequiredService<ILogFileService>();
@@ -42,8 +31,11 @@ class Program
 
             if (isDownloaded)
             {
-                var _file = await _logService.ReadLogFileToProcess();
-                _logService.ProcessLogFile(_file, pathFileOut);
+                var fileString = await _logService.ReadLogFileToProcess();
+                if(string.IsNullOrEmpty(fileString))
+                    throw new Exception($"Could not read file in {pathFile}");
+
+                _logService.ProcessLogFile(fileString, pathFileOut);
             }
         }
         catch (IndexOutOfRangeException)
@@ -60,4 +52,26 @@ class Program
             Console.ReadLine();
         }
     }
+
+    private static void ConfigurationBuilder()
+    {        
+        var configuration = new ConfigurationBuilder();
+        configuration.SetBasePath(AppContext.BaseDirectory)
+            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+            .AddEnvironmentVariables();
+
+        //Configuration Logger
+        Log.Logger = new LoggerConfiguration()
+            .ReadFrom.Configuration(configuration.Build())
+            .Enrich.FromLogContext()
+            .WriteTo.Console()
+            .CreateLogger();
+    }
+
+    private static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureServices((opt, services) =>
+            {
+                services.AddTransient<ILogFileService, LogFileService>();
+            });
 }

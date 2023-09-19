@@ -6,11 +6,12 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Test
 {
     public class LogFileTest
     {
+        private readonly string UrlPathFile = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
         [Fact]
         public async void TestDownloadLogFileSuccess()
         {
             //Arrange
-            var pathFile = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
+            var pathFile = UrlPathFile;
             var logFileServiceMock = new Mock<ILogger<LogFileService>>();
 
             var logFileService = new LogFileService(logFileServiceMock.Object);
@@ -42,7 +43,7 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Test
         public async void TestReadLogFileToProcessSuccess()
         {
             //Arrange
-            var pathFile = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
+            var pathFile = UrlPathFile;
             var logFileServiceMock = new Mock<ILogger<LogFileService>>();
 
             var logFileService = new LogFileService(logFileServiceMock.Object);
@@ -75,7 +76,7 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Test
         public async void TestProcessLogFileSuccess()
         {
             //Arrange            
-            var pathFile = "https://s3.amazonaws.com/uux-itaas-static/minha-cdn-logs/input-01.txt";
+            var pathFile = UrlPathFile;
             var logFileServiceMock = new Mock<ILogger<LogFileService>>();
             var logFileService = new LogFileService(logFileServiceMock.Object);
             
@@ -84,14 +85,14 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Test
             var pathFileOut = "./output/minhaCdn1.txt";            
 
             //ACT
-            var result = await logFileService.ProcessLogFile(fileLog, pathFileOut);
+            var result = logFileService.ProcessLogFile(fileLog, pathFileOut);
 
             //Assert
             Assert.True(result);
         }
 
         [Fact]
-        public async void TestProcessLogFileError()
+        public void TestProcessLogFileError()
         {
             //Arrange
             var logFileServiceMock = new Mock<ILogger<LogFileService>>();
@@ -100,7 +101,7 @@ namespace CandidateTesting.RonaldoRodriguesLopes.Test
             var pathFileOut = "./output/minhaCdn1.txt";            
 
             //ACT
-            var result = await logFileService.ProcessLogFile(fileLog, pathFileOut);
+            var result = logFileService.ProcessLogFile(fileLog, pathFileOut);
 
             //Assert
             Assert.False(result);

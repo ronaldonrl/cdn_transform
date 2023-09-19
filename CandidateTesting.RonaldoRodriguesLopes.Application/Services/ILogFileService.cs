@@ -4,6 +4,6 @@
     {
         Task<bool> DownloadLogFile(string pathHttpFile);
         Task<string> ReadLogFileToProcess();
-        Task<bool> ProcessLogFile(string logFile, string pathFileOut);        
+        bool ProcessLogFile(string logFile, string pathFileOut);        
     }
 }
